@@ -123,3 +123,51 @@ func (d *Device) ScreencapToFile(path string) error {
 
 	return os.WriteFile(path, data, 0644)
 }
+
+
+func (d *Device) WaitForStableFrame(
+	threshold float64,
+	checkInterval time.Duration,
+	timeout time.Duration,
+) ([]byte, error) {
+
+	deadline := time.Now().Add(timeout)
+
+	var prev []byte
+
+	for {
+		if time.Now().After(deadline) {
+			return nil, fmt.Errorf("timeout waiting for stable frame")
+		}
+
+		current, err := d.Screencap()
+		if err != nil {
+			return nil, err
+		}
+
+		if prev != nil {
+			diff := frameDiffPercent(prev, current)
+			if diff <= threshold {
+				return current, nil
+			}
+		}
+
+		prev = current
+		time.Sleep(checkInterval)
+	}
+}
+
+func frameDiffPercent(a, b []byte) float64 {
+	if len(a) != len(b) {
+		return 100.0
+	}
+
+	var diff int
+	for i := range a {
+		if a[i] != b[i] {
+			diff++
+		}
+	}
+
+	return float64(diff) * 100 / float64(len(a))
+}
