@@ -1,42 +1,53 @@
 package input
 
 import (
-	"context"
-	"fmt"
+	"strconv"
+	"time"
 
 	"github.com/ishaandevburman/androidtouch"
 )
 
 type Input struct {
-	device *androidtouch.Device
+	session *androidtouch.Session
 }
 
-func New(device *androidtouch.Device) *Input {
-	return &Input{device: device}
+func New(session *androidtouch.Session) *Input {
+	return &Input{session: session}
 }
 
-func (i *Input) Tap(ctx context.Context, x, y int) error {
-	_, err := i.device.Run(ctx, "shell", "input", "tap",
-		fmt.Sprintf("%d", x),
-		fmt.Sprintf("%d", y),
+func (i *Input) Tap(x, y int) error {
+	return i.session.Run(
+		"input tap " + strconv.Itoa(x) + " " + strconv.Itoa(y),
 	)
-	return err
 }
 
-func (i *Input) Swipe(ctx context.Context, x1, y1, x2, y2, duration int) error {
-	_, err := i.device.Run(ctx, "shell", "input", "swipe",
-		fmt.Sprintf("%d", x1),
-		fmt.Sprintf("%d", y1),
-		fmt.Sprintf("%d", x2),
-		fmt.Sprintf("%d", y2),
-		fmt.Sprintf("%d", duration),
+func (i *Input) TapSync(x, y int) error {
+	return i.session.RunSync(
+		"input tap " + strconv.Itoa(x) + " " + strconv.Itoa(y),
 	)
-	return err
 }
 
-func (i *Input) KeyEvent(ctx context.Context, keycode int) error {
-	_, err := i.device.Run(ctx, "shell", "input", "keyevent",
-		fmt.Sprintf("%d", keycode),
+func (i *Input) TapWithDelay(x, y int, d time.Duration) error {
+	if err := i.TapSync(x, y); err != nil {
+		return err
+	}
+	time.Sleep(d)
+	return nil
+}
+
+func (i *Input) Swipe(x1, y1, x2, y2, duration int) error {
+	return i.session.Run(
+		"input swipe " +
+			strconv.Itoa(x1) + " " +
+			strconv.Itoa(y1) + " " +
+			strconv.Itoa(x2) + " " +
+			strconv.Itoa(y2) + " " +
+			strconv.Itoa(duration),
 	)
-	return err
+}
+
+func (i *Input) KeyEvent(keycode int) error {
+	return i.session.Run(
+		"input keyevent " + strconv.Itoa(keycode),
+	)
 }
