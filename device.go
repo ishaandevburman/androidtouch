@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -89,4 +90,36 @@ func (d *Device) WithContext(ctx context.Context) *Device {
 
 func (d *Device) SetTimeout(t time.Duration) {
 	d.timeout = t
+}
+
+func (d *Device) Screencap() ([]byte, error) {
+	ctx, cancel := context.WithTimeout(d.ctx, d.timeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(
+		ctx,
+		d.adbPath,
+		d.adbArgs("exec-out", "screencap", "-p")...,
+	)
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("%w: %s", err, stderr.String())
+	}
+
+	return stdout.Bytes(), nil
+}
+
+func (d *Device) ScreencapToFile(path string) error {
+	data, err := d.Screencap()
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(path, data, 0644)
 }
