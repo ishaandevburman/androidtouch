@@ -27,6 +27,17 @@ func (i *Input) TapSync(x, y int) error {
 	)
 }
 
+func (i *Input) TapBatch(points [][2]int) error {
+
+	cmds := make([]string, len(points))
+
+	for i2, p := range points {
+		cmds[i2] = "input tap " + strconv.Itoa(p[0]) + " " + strconv.Itoa(p[1])
+	}
+
+	return i.session.RunBatch(cmds)
+}
+
 func (i *Input) TapWithDelay(x, y int, d time.Duration) error {
 	if err := i.TapSync(x, y); err != nil {
 		return err

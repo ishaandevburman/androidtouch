@@ -77,6 +77,16 @@ func (s *Session) Run(command string) error {
 	return s.write(command)
 }
 
+func (s *Session) RunBatch(cmds []string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	command := strings.Join(cmds, "; ")
+
+	_, err := s.stdin.Write([]byte(command + "\n"))
+	return err
+}
+
 func (s *Session) write(command string) error {
 	_, err := s.stdin.Write([]byte(command + "\n"))
 	return err
